@@ -1,0 +1,31 @@
+name: Generate Sitemap
+
+on:
+  push:
+    branches:
+      - main # Jalankan saat ada push ke branch utama
+
+  schedule:
+    - cron: '0 0 * * *' # Update sitemap setiap hari
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate sitemap.json
+        run: |
+          echo "[" > sitemap.json
+          find . -type f -name "*.html" ! -name "index.html" ! -name "sitemap.html" | sed 's|^\./||' | jq -R . | paste -sd "," - >> sitemap.json
+          echo "]" >> sitemap.json
+
+      - name: Commit and push
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add sitemap.json
+          git commit -m "Update sitemap.json" || echo "No changes to commit"
+          git push
