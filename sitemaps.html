@@ -31,19 +31,13 @@
     <script>
         async function generateSitemap() {
             try {
-                const response = await fetch('./'); // Mendapatkan isi direktori
-                const text = await response.text();
+                const response = await fetch('list-files.php'); // Panggil script backend PHP
+                const files = await response.json();
 
-                // Parsing isi direktori dengan DOMParser
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-                const links = Array.from(doc.querySelectorAll('a')); // Mengambil semua link dalam direktori
-
-                // Filter file dengan ekstensi .html atau .htm
-                const validFiles = links
-                    .map(link => link.getAttribute('href')) // Mengambil href dari link
-                    .filter(file => file.match(/\.(html|htm)$/i)) // Filter hanya file .html dan .htm
-                    .sort(); // Mengurutkan nama file
+                // Filter file HTML dan kecualikan 'index.html' & 'sitemap.html'
+                const validFiles = files
+                    .filter(file => file.match(/\.(html|htm)$/i) && !['index.html', 'sitemap.html'].includes(file))
+                    .sort();
 
                 // Menampilkan file dalam elemen ul
                 const sitemap = document.getElementById('sitemap');
