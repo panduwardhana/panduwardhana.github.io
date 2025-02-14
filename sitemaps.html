@@ -32,50 +32,35 @@
 </head>
 <body>
     <h1>Sitemap</h1>
-    <p><a id="xml-link" href="#" download="sitemap.xml">Download Sitemap XML</a></p>
     <ul id="sitemap"></ul>
     <textarea id="sitemap-xml" readonly></textarea>
 
     <script>
         async function generateSitemap() {
             try {
-                const response = await fetch('./'); // Ambil isi direktori (hanya jika directory listing aktif)
-                const text = await response.text();
+                const response = await fetch('sitemap.json'); // Ambil daftar file dari JSON
+                const files = await response.json();
 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-                const links = Array.from(doc.querySelectorAll('a'));
-
-                const validFiles = links
-                    .map(link => link.getAttribute('href'))
-                    .filter(file => file.match(/\.(html|htm)$/i) && !['index.html', 'sitemap.html'].includes(file))
-                    .sort();
-
-                // Tampilkan daftar HTML
                 const sitemap = document.getElementById('sitemap');
-                validFiles.forEach(file => {
+                const baseUrl = window.location.origin + window.location.pathname;
+
+                let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+
+                files.forEach(file => {
                     const li = document.createElement('li');
                     const a = document.createElement('a');
                     a.href = file;
                     a.textContent = file;
                     li.appendChild(a);
                     sitemap.appendChild(li);
-                });
 
-                // Buat Sitemap XML
-                const baseUrl = window.location.origin + window.location.pathname;
-                let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-                validFiles.forEach(file => {
                     xml += `    <url>\n        <loc>${baseUrl}${file}</loc>\n        <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.8</priority>\n    </url>\n`;
                 });
+
                 xml += `</urlset>`;
 
-                // Tampilkan XML di textarea
                 document.getElementById('sitemap-xml').value = xml;
 
-                // Buat link download XML
-                const blob = new Blob([xml], { type: 'application/xml' });
-                document.getElementById('xml-link').href = URL.createObjectURL(blob);
             } catch (error) {
                 console.error('Error generating sitemap:', error);
             }
