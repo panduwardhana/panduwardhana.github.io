@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PUBLIC File Viewer</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+    iframe { width: 100%; height: 500px; border: 1px solid #ccc; margin-top: 20px; }
+    #uploader, #viewer { border: 1px solid #ddd; padding: 20px; margin-top: 20px; border-radius: 10px; }
+    input[type="file"] { width: 100%; padding: 10px; margin-top: 10px; }
+    button { padding: 10px 15px; margin-top: 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:disabled { background-color: #aaa; }
+    #status { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>PUBLIC File Viewer</h1>  <div id="uploader">
+    <h2>Upload & Render File</h2>
+    <input type="file" id="fileInput" accept=".html,.htm,.txt"><br>
+    <button id="uploadBtn" disabled>Upload & View</button>
+    <div id="status"></div>
+  </div>  <div id="viewer" style="display:none;">
+    <h2>Live Rendered Output</h2>
+    <iframe id="previewFrame"></iframe>
+  </div>  <script>
+    // GitHub token embedded directly (public exposure!)
+    const token = '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';
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const status = document.getElementById('status');
+    const viewer = document.getElementById('viewer');
+    const previewFrame = document.getElementById('previewFrame');
+
+    fileInput.addEventListener('change', () => {
+      uploadBtn.disabled = !fileInput.files.length;
+    });
+
+    uploadBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const content = reader.result;
+        const payload = {
+          description: `Uploaded via PUBLIC uploader: ${file.name}`,
+          public: true,
+          files: { [file.name]: { content } }
+        };
+        status.textContent = 'Uploading to GitHub Gist...';
+
+        try {
+          const res = await fetch('https://api.github.com/gists', {
+            method: 'POST',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+          if (res.ok) {
+            status.innerHTML = `Uploaded to Gist! <a href="${data.html_url}" target="_blank">View Source</a>`;
+            const blob = new Blob([content], { type: file.type });
+            const blobURL = URL.createObjectURL(blob);
+            previewFrame.src = blobURL;
+            viewer.style.display = 'block';
+          } else {
+            throw new Error(data.message || 'Upload failed');
+          }
+        } catch (err) {
+          status.textContent = `Error: ${err.message}`;
+        }
+      };
+      reader.readAsText(file);
+    });
+  </script></body>
+</html>
